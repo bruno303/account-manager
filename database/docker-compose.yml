@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  account-manager-postgres:
+    image: postgres:14.1-alpine
+    container_name: account-manager-postgres
+    restart: "no"
+    networks: 
+      - accountmanager
+    ports: 
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=accountmanager
+      - POSTGRES_USER=accountmanager
+      - POSTGRES_DB=accountmanager
+
+networks: 
+  accountmanager: 
+
+#####
+# check opened connections:
+#####
+# lsof -nP -i :5432 -sTCP:ESTABLISHED
+#
