@@ -1,11 +1,10 @@
 package com.bso.accountmanager.registration.controller;
 
-import com.bso.accountmanager.application.dto.contract.AccountCreationDTO;
-import com.bso.accountmanager.application.dto.entry.EntryCreationDTO;
-import com.bso.accountmanager.application.service.AccountCrudService;
-import com.bso.accountmanager.application.service.EntryProcessorService;
 import com.bso.accountmanager.domain.entity.account.Account;
 import com.bso.accountmanager.domain.entity.account.Entry;
+import com.bso.accountmanager.domain.handlers.AccountQueryHandler;
+import com.bso.accountmanager.domain.querys.AccountWithAllEntriesQuery;
+import com.bso.accountmanager.domain.querys.AllAccountsQuery;
 import com.bso.accountmanager.registration.config.AccountManagerController;
 import com.bso.accountmanager.registration.dto.AccountResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,39 +12,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @AccountManagerController
 @RequiredArgsConstructor
-public class AccountController {
+public class AccountReadController {
 
-    private final AccountCrudService accountCrudService;
-    private final EntryProcessorService entryProcessorService;
+    private final AccountQueryHandler queryHandler;
 
     @GetMapping("v1/account")
     public ResponseEntity<List<AccountResponse>> getAllAccounts() {
-        List<Account> accounts = accountCrudService.findAll();
+        List<Account> accounts = queryHandler.handle(new AllAccountsQuery());
         return new ResponseEntity<>(toResponse(accounts), HttpStatus.OK);
-    }
-
-    @PostMapping("v1/account")
-    public ResponseEntity<AccountResponse> createAccount(@RequestBody AccountCreationDTO dto) {
-        Account account = accountCrudService.createContract(dto);
-        return new ResponseEntity<>(toResponse(account), HttpStatus.CREATED);
-    }
-
-    @PostMapping("v1/account/{id}/entry")
-    public ResponseEntity<Void> processEntry(@PathVariable("id") UUID id,
-                                             @RequestBody EntryCreationDTO dto) {
-        entryProcessorService.processNewEntry(dto);
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping("v1/account/{branch}/{account}")
@@ -53,7 +35,8 @@ public class AccountController {
             @PathVariable("branch") Integer branch,
             @PathVariable("account") Long account
     ) {
-        Account accountFound = accountCrudService.findByBranchAndAccountWithAllEntries(branch, account);
+        var query = new AccountWithAllEntriesQuery(branch, account);
+        Account accountFound = queryHandler.handle(query);
         return new ResponseEntity<>(toResponse(accountFound), HttpStatus.OK);
     }
 
